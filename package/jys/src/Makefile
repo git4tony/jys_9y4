@@ -1,9 +1,9 @@
 # build mfm383c executable when user executes "make"
 LIBS=-lmodbus
 
-jys: jys.o
+jys: main.o
 	$(CC) $(LDFLAGS) $(LIBS) main.o -o jys
-jys.o: main.c
+main.o: main.c
 	$(CC) -c $(CFLAGS) main.c
 
 # remove object files and executable when user executes "make clean"
