@@ -7,12 +7,12 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=libmodbus
-PKG_VERSION:=3.0.6
+PKG_VERSION:=3.1.2
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=http://libmodbus.org/releases/
-PKG_MD5SUM:=c80f88b6ca19cabc4ceffc195ca07771
+PKG_MD5SUM:=dd4262f87ed835c4d1e560f8321a222c
 
 PKG_MAINTAINER:=Michael Heimpold <mhei@heimpold.de>
 
