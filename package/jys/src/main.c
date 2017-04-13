@@ -27,8 +27,8 @@ typedef struct {
 const reg_t jys_9y4_registers[] = {
 {40001, "", "Not Use", 1, 0, 0},
 {40002, "net", "Connection Mode", 1, 0, 0},
-{40003, "CT", "Current Ratio", 1, 0, 0},
-{40004, "PT", "Voltage Ratio", 1, 0, 0},
+{40003, "CT", "Current Ratio", 1, 0, 1},
+{40004, "PT", "Voltage Ratio", 1, 0, 1},
 {40005, "DI-S", "The First Three Rows Power Display Option", 1, 0, 0},
 {40006, "DI-E", "Electricity Option", 1, 0, 0},
 {40007, "DI-L", "Backlit Display Option", 1, 0, 0},
@@ -140,16 +140,17 @@ int main(int argc, char *argv[])
 	modbus_t *ctx;
 	
 	int opt;
-	int get_all = 0;
+	int all_info = 0;
 	char *dev = "/dev/ttyUSB0";
 	long baud_rate = 9600;
 	char parity = 'E';
 	int stop_bit = 1;
+	int target_slave = 1;
 
-	while ((opt = getopt(argc, argv, "ad:b:p:s:h")) != -1) {
+	while ((opt = getopt(argc, argv, "ad:b:p:s:t:h")) != -1) {
 		switch (opt) {
 			case 'a':
-				get_all = 1;
+				all_info = 1;
 				break;
 			case 'd':
 				dev = optarg;
@@ -163,16 +164,20 @@ int main(int argc, char *argv[])
 			case 's':
 				stop_bit = atoi(optarg);
 				break;
+			case 't':
+				target_slave = atoi(optarg);
+				break;
 			case 'h':
 			default:
 				base_name = basename(argv[0]);
 
-				fprintf(stderr, "Usage: %s [-d /dev/ttyUSB0] [-b 9600] [-p E] [-s 1] [-a]\n"
+				fprintf(stderr, "Usage: %s [-d /dev/ttyUSB0] [-b 9600] [-p E] [-s 1] [-t 1] [-a]\n"
 						"       %s 40001 [num]\n"
 						"-b baud_rate\n"
 						"-p parity N,O,E\n"
 						"-s stop_bit\n"
-						"-a all\n",
+						"-t target_slave\n"
+						"-a all_info\n",
 					base_name, base_name);
 					return -1;
 		}
@@ -219,14 +224,13 @@ int main(int argc, char *argv[])
 	modbus_set_byte_timeout(ctx, 1, 500000);
 	modbus_set_response_timeout(ctx, 1, 500000);
 
-	if ( modbus_set_slave(ctx, 1) == -1 ) {
+	if ( modbus_set_slave(ctx, target_slave) == -1 ) {
 		fprintf(stderr, "Modbus modbus_set_slave() failed: %s\n", modbus_strerror(errno));
 		modbus_free(ctx);
 		return -2;
 	}	
 		
 	if ( optind >= argc ) {
-		//
 		int i;
 		int n;
 		reg_t *reg;
@@ -237,7 +241,7 @@ int main(int argc, char *argv[])
 		n = 0;
 		reg = jys_9y4_registers;
 		for(i = 0; i < (sizeof(jys_9y4_registers) / sizeof(reg_t)); i++, reg++ ) {
-			if ( !get_all && (reg->min == 0) )
+			if ( !all_info && (reg->min == 0) )
 				continue;
 
  			if ( reg->addr >= 40001 ) {
@@ -249,12 +253,18 @@ int main(int argc, char *argv[])
 				if ( n != 0 ) {
 					fprintf(stdout, ",\n");
 				}
-				fprintf(stdout, "{ \"addr\": %d, \"name\": \"%s\" , \"descr\": \"%s\", \"value\": %s }",
-					reg->addr, reg->name, reg->descr, format_value(reg->type, data));
+				if ( all_info ) {
+					fprintf(stdout, "{ \"addr\": %d, \"name\": \"%s\" , \"descr\": \"%s\", \"value\": %s }",
+						reg->addr, reg->name, reg->descr, format_value(reg->type, data));
+				}
+				else {
+					fprintf(stdout, "{ \"addr\": %d, \"name\": \"%s\" , \"value\": %s }",
+						reg->addr, reg->name, format_value(reg->type, data));	
+				}
+
 				n++;
 			}
 		}
-		
 		fprintf(stdout, "]\n");
 	}
 	else {
